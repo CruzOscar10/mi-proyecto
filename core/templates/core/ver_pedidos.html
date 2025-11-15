@@ -1,0 +1,54 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Mis Pedidos - Restaurante El Paisa{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-shopping-cart"></i> Mis Pedidos
+        </h1>
+        
+        {% if pedidos %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Dirección</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pedidos %}
+                    <tr>
+                        <td>#{{ pedido.id }}</td>
+                        <td>{{ pedido.fecha_pedido|date:"d/m/Y H:i" }}</td>
+                        <td>${{ pedido.total }}</td>
+                        <td>
+                            <span class="badge bg-{% if pedido.estado == 'entregado' %}success{% elif pedido.estado == 'pendiente' %}warning{% else %}primary{% endif %}">
+                                {{ pedido.get_estado_display }}
+                            </span>
+                        </td>
+                        <td>{{ pedido.direccion_entrega|default:"No especificada" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No tienes pedidos realizados.
+        </div>
+        {% endif %}
+        
+        <div class="mt-3">
+            <a href="{% url 'hacer_pedido' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Pedido
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
