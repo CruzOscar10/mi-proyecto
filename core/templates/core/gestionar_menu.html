@@ -1,0 +1,121 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Gestionar Menú - Restaurante El Paisa{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-utensils"></i> Gestionar Menú
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plus"></i> Agregar Producto
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="agregar_producto">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Producto</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Precio</label>
+                        <input type="number" name="precio" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Categoría</label>
+                        <select name="categoria" class="form-select" required>
+                            <option value="">Seleccionar categoría</option>
+                            {% for categoria in categorias %}
+                            <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-save"></i> Agregar Producto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list"></i> Productos del Menú
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if productos %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Precio</th>
+                                <th>Disponible</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos %}
+                            <tr>
+                                <td>{{ producto.nombre }}</td>
+                                <td>{{ producto.categoria.nombre }}</td>
+                                <td>${{ producto.precio }}</td>
+                                <td>
+                                    {% if producto.disponible %}
+                                    <span class="badge bg-success">Sí</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="toggle_disponible">
+                                        <input type="hidden" name="producto_id" value="{{ producto.id }}">
+                                        <button type="submit" class="btn btn-sm {% if producto.disponible %}btn-warning{% else %}btn-success{% endif %}">
+                                            {% if producto.disponible %}
+                                            <i class="fas fa-times"></i> Desactivar
+                                            {% else %}
+                                            <i class="fas fa-check"></i> Activar
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No hay productos en el menú.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
