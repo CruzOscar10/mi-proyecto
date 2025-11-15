@@ -1,0 +1,92 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Reportes - Restaurante El Paisa{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-bar"></i> Reportes y Estadísticas
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3>{{ pedidos_hoy }}</h3>
+                <p>Pedidos Hoy</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3>{{ pedidos_semana }}</h3>
+                <p>Pedidos Esta Semana</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h3>{{ pedidos_mes }}</h3>
+                <p>Pedidos Este Mes</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line"></i> Ventas
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Ventas Hoy:</span>
+                        <strong>${{ ventas_hoy }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Ventas Esta Semana:</span>
+                        <strong>${{ ventas_semana }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Ventas Este Mes:</span>
+                        <strong>${{ ventas_mes }}</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-star"></i> Productos Más Populares
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if productos_populares %}
+                <ul class="list-group">
+                    {% for producto in productos_populares %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ producto.producto__nombre }}</span>
+                        <strong>{{ producto.total_vendido }} vendidos</strong>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No hay datos de productos populares.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
