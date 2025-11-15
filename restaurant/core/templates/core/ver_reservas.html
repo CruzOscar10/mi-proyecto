@@ -1,0 +1,54 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Mis Reservas - Restaurante El Paisa{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-calendar-check"></i> Mis Reservas
+        </h1>
+        
+        {% if reservas %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha Reserva</th>
+                        <th>Personas</th>
+                        <th>Estado</th>
+                        <th>Notas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reserva in reservas %}
+                    <tr>
+                        <td>#{{ reserva.id }}</td>
+                        <td>{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}</td>
+                        <td>{{ reserva.numero_personas }}</td>
+                        <td>
+                            <span class="badge bg-{% if reserva.estado == 'confirmada' %}success{% elif reserva.estado == 'pendiente' %}warning{% else %}primary{% endif %}">
+                                {{ reserva.get_estado_display }}
+                            </span>
+                        </td>
+                        <td>{{ reserva.notas|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No tienes reservas realizadas.
+        </div>
+        {% endif %}
+        
+        <div class="mt-3">
+            <a href="{% url 'reservar_mesa' %}" class="btn btn-warning">
+                <i class="fas fa-plus"></i> Nueva Reserva
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
