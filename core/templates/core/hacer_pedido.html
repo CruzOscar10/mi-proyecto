@@ -1,0 +1,283 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Hacer Pedido - Restaurante El Paisa{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-shopping-cart"></i> Realizar Pedido
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-utensils"></i> Menú Disponible
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for categoria, productos in productos_por_categoria.items %}
+                <div class="mb-4">
+                    <h5 class="text-primary">
+                        {% if categoria.tipo == 'comida' %}
+                        <i class="fas fa-utensils"></i>
+                        {% else %}
+                        <i class="fas fa-glass-martini-alt"></i>
+                        {% endif %}
+                        {{ categoria.nombre }}
+                    </h5>
+                    
+                    <div class="row">
+                        {% for producto in productos %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                {% if producto.imagen %}
+                                <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 150px; object-fit: cover;">
+                                {% else %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                                    <i class="fas fa-utensils fa-2x text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ producto.nombre }}</h6>
+                                    <p class="card-text small text-muted">{{ producto.descripcion|default:"Delicioso plato de nuestra cocina." }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="h6 text-success mb-0">${{ producto.precio }}</span>
+                                        <button type="button" class="btn btn-sm btn-outline-primary agregar-carrito" 
+                                                data-id="{{ producto.id }}" 
+                                                data-nombre="{{ producto.nombre }}" 
+                                                data-precio="{{ producto.precio }}">
+                                            <i class="fas fa-plus"></i> Agregar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if not forloop.last %}<hr>{% endif %}
+                {% empty %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No hay productos disponibles en este momento.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shopping-cart"></i> Mi Pedido
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="pedido-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_direccion_entrega" class="form-label">Dirección de Entrega *</label>
+                        {{ pedido_form.direccion_entrega }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_notas" class="form-label">Notas Adicionales</label>
+                        {{ pedido_form.notas }}
+                    </div>
+
+                    <div id="carrito">
+                        <h6>Productos en el carrito:</h6>
+                        <div id="lista-carrito" class="mb-3">
+                            <p class="text-muted">No hay productos en el carrito</p>
+                        </div>
+                        <div id="total-carrito" class="fw-bold text-success mb-3">Total: $0.00</div>
+                        
+                        <!-- Campo oculto para enviar los datos del carrito -->
+                        <input type="hidden" name="carrito_data" id="carrito-data">
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success" id="btn-enviar-pedido" disabled>
+                            <i class="fas fa-paper-plane"></i> Enviar Pedido
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let carrito = [];
+let total = 0;
+
+// Usar event listeners en lugar de onclick para evitar problemas con caracteres especiales
+document.addEventListener('DOMContentLoaded', function() {
+    const botonesAgregar = document.querySelectorAll('.agregar-carrito');
+    
+    botonesAgregar.forEach(boton => {
+        boton.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const nombre = this.getAttribute('data-nombre');
+            const precio = parseFloat(this.getAttribute('data-precio'));
+            
+            agregarAlCarrito(id, nombre, precio);
+        });
+    });
+});
+
+function agregarAlCarrito(id, nombre, precio) {
+    // Convertir id a número
+    const productoId = parseInt(id);
+    
+    // Buscar si el producto ya está en el carrito
+    const itemExistente = carrito.find(item => item.id === productoId);
+    
+    if (itemExistente) {
+        itemExistente.cantidad += 1;
+        itemExistente.subtotal = itemExistente.cantidad * precio;
+    } else {
+        carrito.push({
+            id: productoId,
+            nombre: nombre,
+            precio: precio,
+            cantidad: 1,
+            subtotal: precio
+        });
+    }
+    
+    actualizarCarrito();
+    
+    // Mostrar feedback visual
+    mostrarFeedback('Producto agregado al carrito');
+}
+
+function eliminarDelCarrito(id) {
+    carrito = carrito.filter(item => item.id !== id);
+    actualizarCarrito();
+    mostrarFeedback('Producto eliminado del carrito');
+}
+
+function actualizarCarrito() {
+    const listaCarrito = document.getElementById('lista-carrito');
+    const totalCarrito = document.getElementById('total-carrito');
+    const btnEnviar = document.getElementById('btn-enviar-pedido');
+    const carritoData = document.getElementById('carrito-data');
+    
+    // Limpiar lista
+    listaCarrito.innerHTML = '';
+    
+    // Calcular total
+    total = 0;
+    
+    if (carrito.length === 0) {
+        listaCarrito.innerHTML = '<p class="text-muted">No hay productos en el carrito</p>';
+        btnEnviar.disabled = true;
+        carritoData.value = '';
+    } else {
+        carrito.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'd-flex justify-content-between align-items-center border-bottom py-2';
+            div.innerHTML = `
+                <div>
+                    <small class="fw-bold">${item.nombre}</small><br>
+                    <small class="text-muted">$${item.precio} x ${item.cantidad}</small>
+                </div>
+                <div class="text-end">
+                    <span class="fw-bold text-success">$${item.subtotal.toFixed(2)}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-id="${item.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            listaCarrito.appendChild(div);
+            total += item.subtotal;
+        });
+        
+        // Agregar event listeners a los botones de eliminar
+        const botonesEliminar = listaCarrito.querySelectorAll('.btn-outline-danger');
+        botonesEliminar.forEach(boton => {
+            boton.addEventListener('click', function() {
+                const id = parseInt(this.getAttribute('data-id'));
+                eliminarDelCarrito(id);
+            });
+        });
+        
+        btnEnviar.disabled = false;
+        
+        // Guardar datos del carrito en campo oculto
+        carritoData.value = JSON.stringify(carrito);
+    }
+    
+    totalCarrito.textContent = `Total: $${total.toFixed(2)}`;
+}
+
+function mostrarFeedback(mensaje) {
+    // Crear elemento de feedback
+    const feedback = document.createElement('div');
+    feedback.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    feedback.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 250px;';
+    feedback.innerHTML = `
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(feedback);
+    
+    // Auto-eliminar después de 2 segundos
+    setTimeout(() => {
+        if (feedback.parentNode) {
+            feedback.remove();
+        }
+    }, 2000);
+}
+
+// Manejar envío del formulario
+document.getElementById('pedido-form').addEventListener('submit', function(e) {
+    if (carrito.length === 0) {
+        e.preventDefault();
+        mostrarFeedback('Por favor agrega al menos un producto al carrito.');
+        return;
+    }
+    
+    // Validar dirección de entrega
+    const direccion = document.getElementById('id_direccion_entrega').value.trim();
+    if (!direccion) {
+        e.preventDefault();
+        mostrarFeedback('Por favor ingresa una dirección de entrega.');
+        return;
+    }
+    
+    // Mostrar confirmación
+    if (!confirm('¿Estás seguro de que quieres enviar el pedido?')) {
+        e.preventDefault();
+        return;
+    }
+    
+    // Mostrar mensaje de envío
+    mostrarFeedback('Enviando pedido...');
+});
+</script>
+
+<style>
+.card-img-top {
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+.sticky-top {
+    position: sticky;
+    z-index: 100;
+}
+.agregar-carrito:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s;
+}
+</style>
+{% endblock %}
